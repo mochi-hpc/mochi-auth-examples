@@ -20,7 +20,6 @@ int main(int argc, char** argv)
     hg_id_t authenticate  = 0;
     margo_instance_id mid = MARGO_INSTANCE_NULL;
     hg_handle_t handle    = HG_HANDLE_NULL;
-    munge_ctx_t ctx       = NULL;
     munge_err_t err       = EMUNGE_SUCCESS;
 
     const char* server = argv[1];
@@ -34,8 +33,6 @@ int main(int argc, char** argv)
 
     authenticate = MARGO_REGISTER(mid, "authenticate", auth_in_t, auth_out_t, NULL);
 
-    ctx = create_munge_context();
-
     hret = margo_addr_lookup(mid, server, &address);
     ASSERT(hret == HG_SUCCESS,
            "margo_addr_lookup failed with error: %s\n",
@@ -46,7 +43,7 @@ int main(int argc, char** argv)
            "margo_create failed with error: %s\n",
            HG_Error_to_string(hret));
 
-    err = munge_encode(&in.credential, ctx, NULL, 0);
+    err = munge_encode(&in.credential, NULL, NULL, 0);
     ASSERT(err == EMUNGE_SUCCESS,
            "munge_encode failed: %s\n", munge_strerror(err));
 
@@ -61,7 +58,6 @@ int main(int argc, char** argv)
            HG_Error_to_string(hret));
 
 finish:
-    munge_ctx_destroy(ctx);
     free(in.credential);
     margo_free_output(handle, &out);
     margo_destroy(handle);

@@ -62,15 +62,13 @@ void authenticate(hg_handle_t handle)
     int         ret  = 0;
     munge_err_t err  = 0;
 
-    munge_ctx_t ctx = create_munge_context();
-
     hret = margo_get_input(handle, &in);
     ASSERT(hret == HG_SUCCESS,
            "Could not deserialize input arguments\n");
 
     uid_t uid = -1;
     gid_t gid = -1;
-    err = munge_decode(in.credential, ctx, NULL, NULL, &uid, &gid);
+    err = munge_decode(in.credential, NULL, NULL, NULL, &uid, &gid);
     ASSERT(err == 0,
            "Failed to decode credential\n");
 
@@ -78,7 +76,6 @@ void authenticate(hg_handle_t handle)
     printf("Authendicated with uid=%d (%s) and gid=%d\n", uid, pws->pw_name, gid);
 
 finish:
-    munge_ctx_destroy(ctx);
     out.ret = ret;
     margo_respond(handle, &out);
     margo_free_input(handle, &in);

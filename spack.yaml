@@ -1,6 +1,6 @@
 spack:
   specs:
-    - munge
+    - munge localstatedir=/var
     - openssl
     - mochi-margo
     - mochi-thallium
