@@ -13,7 +13,7 @@ The code in this repository can be built as follows.
 1. Follow the tutorial [here](https://mochi.readthedocs.io/en/latest/installing.html)
    to install [spack](https://spack.io) and the repository of Mochi packages.
 2. Clone this repository.
-3. Create a spack environment using the [spack.yaml] file in this repository, as follows.
+3. Create a spack environment using the [spack.yaml](spack.yaml) file in this repository, as follows.
    ```
    $ spack env create mochi-auth-env spack.yaml
    $ spack activate mochi-auth-env
@@ -27,7 +27,7 @@ The code in this repository can be built as follows.
    $ make
    ```
 
-Each C (.c) and  C++ (.cpp) source file in the [src] folder corresponds to a program.
+Each C (.c) and  C++ (.cpp) source file in the [src](src) folder corresponds to a program.
 Programs go in pairs of a client and a server. They are prefixed with the API used,
 `margo_` for C programs and `thallium_` for C++ programs.
 
@@ -45,7 +45,7 @@ If your cluster runs uses [Slurm](https://slurm.schedmd.com/documentation.html),
 it likely has a munge daemon running on all of its compute nodes. The daemon
 runs under the `munge` user, which is not priviledged.
 Programs that need to encode and decode credentials communicate locally with this daemon
-via a named socket, usually `/var/run/munge/munge.socket.2`. Note how our [spack.yaml]
+via a named socket, usually `/var/run/munge/munge.socket.2`. Note how our [spack.yaml](spack.yaml)
 file specifies the `localstatedir=/var` option for munge. If you find that on your
 cluster, Munge's socket is located elsewhere, this is where this path should be changed.
 
@@ -53,7 +53,7 @@ For development on a machine where you have sudo priviledges, Munge is usually
 available as a package, and easy to setup. For instance on Ubuntu, `sudo apt install munge`
 should not only install Munge, but also create the `munge` user and group and should also
 make the `munge` daemon start on startup. For more information on how to install and setup
-Munge, please refer to [its documentation](https://dun.github.io/munge/).
+Munge, please refer to its [documentation](https://dun.github.io/munge/).
 While the munge spack package provides the `munged` program in its `sbin` folder, we
 recommend relying on a system-provided package to replicate the correct setup, which relies
 on a `munge` user to run this daemon.
@@ -61,6 +61,6 @@ on a `munge` user to run this daemon.
 Simple authentication example
 -----------------------------
 
-- [src/margo_simple_auth_client.c]
-- [src/margo_simple_auth_server.c]
-- [src/margo_simple_auth_types.h]
+- [src/margo_simple_auth_client.c](src/margo_simple_auth_client.c)
+- [src/margo_simple_auth_server.c](src/margo_simple_auth_server.c)
+- [src/margo_simple_auth_types.h](src/margo_simple_auth_types.h)
