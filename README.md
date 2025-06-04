@@ -61,6 +61,28 @@ on a `munge` user to run this daemon.
 Simple authentication example
 -----------------------------
 
+**C files for this example:**
 - [src/margo_simple_auth_client.c](src/margo_simple_auth_client.c)
 - [src/margo_simple_auth_server.c](src/margo_simple_auth_server.c)
 - [src/margo_simple_auth_types.h](src/margo_simple_auth_types.h)
+
+In this example, we define an `authenticate` RPC that will be used to authenticate a user.
+The client program uses `munge_encode` to create a credential string without any extra payload.
+This credential string will simply carry the user's `uid` and `gid` in an encrypted way.
+This credential is sent to the server in the arguments of the `authenticate` RPC, and the server
+uses `munge_decode` to decode it, retrieving the sender's `uid` and `gid`. The credential is
+unique, that is, another call to `munge_encode` will produce a new credential, hence if
+a third party were to spy on the communication and retrieve the credential string, it would
+not be able to use it to pretend to be the original sender.
+
+From this example, it may be tempting to incorporate the same logic in all RPC, i.e.
+add a "credential" field to all the RPCs and invoke `munge_encode` and `munge_decode`
+on every RPC. This however would have a cost, as the munge daemon would need to be contacted
+in every RPC by the client and by the server.
+
+Instead, the next example relies on [OpenSSL](https://www.openssl.org/) to use a
+Message Authentication Code (MAC) and avoid relying on Munge after a first authentication RPC.
+
+
+Authentication and MAC example
+------------------------------
