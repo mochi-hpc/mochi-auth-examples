@@ -86,3 +86,35 @@ Message Authentication Code (MAC) and avoid relying on Munge after a first authe
 
 Authentication and MAC example
 ------------------------------
+
+**C files for this example:**
+- [src/margo_auth_mac_client.c](src/margo_auth_mac_client.c)
+- [src/margo_auth_mac_server.c](src/margo_auth_mac_server.c)
+- [src/margo_auth_mac_types.h](src/margo_auth_mac_types.h)
+
+In this example, Munge is used only as a first step, in an `authenticate` RPC, for the client
+to send a key to the server. This key is encrypted as a payload to `munge_encode`, and decoded
+on the server. The server stores the information about the client, namely its `uid` and its `key`.
+This example only stores the information about one client. In a real service, an access control
+component would maintain a hash table of authenticated clients and their key.
+
+Associated with the client's `uid` is also a sequence number (`seq_no`), which starts at 0.
+Any subsequent RPC after authentication will not rely on Munge. Instead, the client uses its
+key and OpenSSL's HMAC to compute a hash of the pair `(uid, seq_no)`. It sends both the
+the pair and the hash as a header to its RPC arguments.
+
+Upon receiving an RPC, the server looks at the clear `uid`, finds the corresponding client
+in its hash (there is only one client stored in this example), check that the sequence number
+matches, and uses the client's key to compute the same hash of the pair `(uid, seq_no)`. If
+the hash matches what the client sent, it must be that the client had the correct key, and
+the server can trust that it is who it claims to be.
+
+
+Where to go from here
+---------------------
+
+The above examples are a good start to implement a multi-user data service with Mochi.
+The second example can be changed to bring more security. For instance instead of a symetric
+key, it could use an asymetric one so that a public key is sent to the server during authentication.
+The sequence number could be replaced with a pseudo-random sequence from a seed that is shared
+(encrypted by Munge) during the authentication.
