@@ -118,3 +118,8 @@ The second example can be changed to bring more security. For instance instead o
 key, it could use an asymetric one so that a public key is sent to the server during authentication.
 The sequence number could be replaced with a pseudo-random sequence from a seed that is shared
 (encrypted by Munge) during the authentication.
+
+One thing to be careful of is clients sending multiple RPCs concurrently. These RPCs may not
+arrive in the same order they were sent, leading to incorrect sequence numbers. A way to solve
+this would be to detect and keep track of missing sequence numbers, or wait for the RPC with
+the correct sequence number.

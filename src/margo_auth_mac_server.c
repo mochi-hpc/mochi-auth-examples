@@ -130,8 +130,14 @@ void hello(hg_handle_t handle)
     ASSERT(hret == HG_SUCCESS,
            "Could not deserialize input arguments\n");
 
+    if(in.token.seq_no != server->client.seq_no) {
+        printf("Unexpected sequence number of the client\n");
+        ret = -1;
+        goto finish;
+    }
+
     ret = check_token(&in.token, in.token.uid, in.token.seq_no,
-                          (const char*)server->client.key, sizeof(server->client.key));
+                      (const char*)server->client.key, sizeof(server->client.key));
 
     if(ret == 0) {
         server->client.seq_no += 1;
