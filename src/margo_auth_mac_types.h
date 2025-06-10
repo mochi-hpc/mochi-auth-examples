@@ -23,7 +23,7 @@ static inline void create_token(token_t* token, uid_t uid, uint64_t seq_no, cons
     token->uid    = (uint64_t)uid;
     token->seq_no = seq_no;
     unsigned int len = 0;
-    HMAC(EVP_sha256(), key, key_len,
+    HMAC(EVP_sha512(), key, key_len,
          (unsigned char *)token, sizeof(token->uid) + sizeof(token->seq_no),
          token->hmac, &len);
     for(unsigned i = len; i < EVP_MAX_MD_SIZE; ++i)

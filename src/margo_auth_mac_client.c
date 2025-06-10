@@ -12,7 +12,7 @@ typedef struct {
     hg_id_t           auth_id;
     hg_id_t           hello_id;
     unsigned char     key[32];
-    uint64_t          seq_no; // note: in practice we should keep one sequence number per server
+    uint64_t          seq_no;
 } client_t;
 
 static int client_authenticate(client_t* client, hg_addr_t address);

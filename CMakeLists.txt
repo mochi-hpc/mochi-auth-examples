@@ -23,7 +23,6 @@ pkg_check_modules (munge REQUIRED IMPORTED_TARGET munge)
 
 # Find the sources
 file (GLOB filenames ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
-message (STATUS "AAA ${filenames}")
 
 foreach (filename ${filenames})
     get_filename_component (name ${filename} NAME_WE)

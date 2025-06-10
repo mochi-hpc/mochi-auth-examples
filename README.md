@@ -95,8 +95,8 @@ Authentication and MAC example
 In this example, Munge is used only as a first step, in an `authenticate` RPC, for the client
 to send a key to the server. This key is encrypted as a payload to `munge_encode`, and decoded
 on the server. The server stores the information about the client, namely its `uid` and its `key`.
-This example only stores the information about one client. In a real service, an access control
-component would maintain a hash table of authenticated clients and their key.
+This example only stores the information about one client. We won't bother storing more as this
+examples has limitations that will be addressed in the next example.
 
 Associated with the client's `uid` is also a sequence number (`seq_no`), which starts at 0.
 Any subsequent RPC after authentication will not rely on Munge. Instead, the client uses its
@@ -109,17 +109,11 @@ matches, and uses the client's key to compute the same hash of the pair `(uid, s
 the hash matches what the client sent, it must be that the client had the correct key, and
 the server can trust that it is who it claims to be.
 
+It is easy to see that this example is limited to one client process per user. If multiple
+processes with the same `uid` were to try to interact with a server, they should not only share
+the same key (dangerous), but they should also coordinate to send RPCs with correct sequence
+numbers. The next example solves this problem by using sessions.
 
-Where to go from here
----------------------
 
-The above examples are a good start to implement a multi-user data service with Mochi.
-The second example can be changed to bring more security. For instance instead of a symetric
-key, it could use an asymetric one so that a public key is sent to the server during authentication.
-The sequence number could be replaced with a pseudo-random sequence from a seed that is shared
-(encrypted by Munge) during the authentication.
-
-One thing to be careful of is clients sending multiple RPCs concurrently. These RPCs may not
-arrive in the same order they were sent, leading to incorrect sequence numbers. A way to solve
-this would be to detect and keep track of missing sequence numbers, or wait for the RPC with
-the correct sequence number.
+Using sessions
+--------------
