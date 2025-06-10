@@ -3,13 +3,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pwd.h>
+#include <openssl/rand.h>
 #include "common.h"
-#include "margo_auth_mac_types.h"
+#include "margo_auth_mac_session_types.h"
 
 typedef struct {
     margo_instance_id mid;
     struct {
         uint64_t      uid;
+        session_id_t  session_id;
         uint64_t      seq_no;
         unsigned char key[32];
     } client; // in practice we would have a hash table of known clients
@@ -74,15 +76,16 @@ finish:
 
 void authenticate(hg_handle_t handle)
 {
-    auth_in_t   in   = {0};
-    auth_out_t  out  = {0};
-    hg_return_t hret = HG_SUCCESS;
-    int         ret  = 0;
-    munge_err_t err  = 0;
-    void*       key  = NULL;
-    int         key_len;
-    uid_t       uid = -1;
-    gid_t       gid = -1;
+    auth_in_t    in   = {0};
+    auth_out_t   out  = {0};
+    hg_return_t  hret = HG_SUCCESS;
+    int          ret  = 0;
+    munge_err_t  err  = 0;
+    void*        key  = NULL;
+    int          key_len;
+    uid_t        uid = -1;
+    gid_t        gid = -1;
+    session_id_t sid = 0;
 
     margo_instance_id     mid  = margo_hg_handle_get_instance(handle);
     const struct hg_info* info = margo_get_info(handle);
@@ -99,12 +102,18 @@ void authenticate(hg_handle_t handle)
     ASSERT(key_len == 32,
            "Key length is expected to be 32\n");
 
+    ret = RAND_bytes((unsigned char*)(&sid), sizeof(sid));
+    ASSERT(ret == 1,
+           "Error generating random session ID\n");
+    ret = 0;
+
     struct passwd *pws = getpwuid(uid);
     printf("Authenticated with uid=%d (%s) and gid=%d\n", uid, pws->pw_name, gid);
 
     memcpy(server->client.key, key, 32);
-    server->client.uid = (uint64_t)uid;
-    server->client.seq_no = 0;
+    server->client.uid        = (uint64_t)uid;
+    server->client.session_id = sid;
+    server->client.seq_no     = 0;
 
 finish:
     free(key);
@@ -136,12 +145,12 @@ void hello(hg_handle_t handle)
         goto finish;
     }
 
-    ret = check_token(&in.token, in.token.uid, in.token.seq_no,
+    ret = check_token(&in.token, in.token.session_id, in.token.seq_no,
                       (const char*)server->client.key, sizeof(server->client.key));
 
     if(ret == 0) {
         server->client.seq_no += 1;
-        printf("Hello %s (username %s)\n", in.name, getpwuid(in.token.uid)->pw_name);
+        printf("Hello %s (username %s)\n", in.name, getpwuid(server->client.uid)->pw_name);
     } else {
         printf("Unauthorized attempt to call the hello RPC\n");
     }

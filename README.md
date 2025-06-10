@@ -117,3 +117,29 @@ numbers. The next example solves this problem by using sessions.
 
 Using sessions
 --------------
+
+**C files for this example:**
+- [src/margo_auth_mac_session_client.c](src/margo_auth_mac_session_client.c)
+- [src/margo_auth_mac_session_server.c](src/margo_auth_mac_session_server.c)
+- [src/margo_auth_mac_session_types.h](src/margo_auth_mac_session_types.h)
+
+In this example, upon receiving an `authenticate` RPC, the server generates a random session ID
+that it sends back to the client. The client uses this session ID instead of its UID in subsequent
+RPCs to sign the RPC.
+
+This example is still made to work with only one client and one server (the client maintains a single
+session and the server maintains information about a single client). It would be easy to assume that
+it now just a matter of adding a hash table of opened sessions on each side, but there are still a number
+of problems.
+
+First, this architecture does not prevent replaying an RPC on another server. Imagine a client
+sending an `authenticate` RPC to server A. If this RPC is intercepted by a malicious actor, this
+actor could send the same payload to server B and open a session with it. We need server B to be able
+to recognize that the payload was intended for server A.
+
+Second, we have no mechanism for sessions to expire. This mechanism is important if we have long-running
+services and many clients, as we wouldn't want the number of sessions stored in the server to grow
+indefinitely.
+
+The next example fixes these two problems and provides a complete solution for multi-user Mochi services.
+
