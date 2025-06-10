@@ -171,5 +171,5 @@ attack for example.
 Acknowledgment
 --------------
 
-We thank [Chris Dunlap](https://people.llnl.gov/dunlap6) for his feedback on earlier
+We thank MUNGE author [Chris Dunlap](https://github.com/dun) for his valuable feedback on earlier
 versions of these examples.
