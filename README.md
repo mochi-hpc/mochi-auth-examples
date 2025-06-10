@@ -166,3 +166,10 @@ Some improvements to this example remain possible. In practice, the MAC could be
 based on more than just the session ID for a given RPC. Including some arguments of the
 RPC can be a way to ensure that content of the RPC is not tempered with in a man-in-the-middle
 attack for example.
+
+
+Acknowledgment
+--------------
+
+We thank [Chris Dunlap](https://people.llnl.gov/dunlap6) for his feedback on earlier
+versions of these examples.
