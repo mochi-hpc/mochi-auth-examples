@@ -65,6 +65,8 @@ int main(int argc, char** argv)
 
     margo_addr_free(server.mid, address);
 
+    // TODO: use margo_push_finalize_callback to clear the content of server.sessions
+
     // register RPCs
     hg_id_t id;
     id = MARGO_REGISTER(server.mid, "authenticate", auth_in_t, auth_out_t, authenticate);
@@ -73,6 +75,9 @@ int main(int argc, char** argv)
     margo_register_data(server.mid, id, &server, NULL);
 
     printf("Server running at address %s\n", server.self_addr);
+
+    // TODO: add a ULT that periodically prunes server.sessions
+    // of sessions that haven't been active in a while
 
     // run progress loop
     margo_wait_for_finalize(server.mid);
@@ -178,6 +183,9 @@ void hello(hg_handle_t handle)
     ASSERT(session != NULL, "Could not find session\n");
     ASSERT(in.token.seq_no == session->seq_no,
            "Unexpected sequence number for session\n");
+
+    // TODO if there is a ULT that clears the sessions periodically,
+    // we should make sure it doesn't remove a session that's in use here
 
     // check the token sent by the client against the session
     ret = check_token(&in.token, in.token.session_id, in.token.seq_no,
