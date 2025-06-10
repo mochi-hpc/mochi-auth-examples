@@ -143,3 +143,26 @@ indefinitely.
 
 The next example fixes these two problems and provides a complete solution for multi-user Mochi services.
 
+
+Complete solution
+-----------------
+
+**C files for this example:**
+- [src/margo_auth_complete_client.c](src/margo_auth_complete_client.c)
+- [src/margo_auth_complete_server.c](src/margo_auth_complete_server.c)
+- [src/margo_auth_complete_types.h](src/margo_auth_complete_types.h)
+
+This example puts together everything discussed above. The client relies on a `connection_t`
+object that encapsulates a server's address, a key, a session ID, and a sequence number. This
+connection object is initialized by an authenticate RPC, and is later used to send RPCs to a
+server.
+
+The server keeps a hash of `session_t` instances, which represent sessions opened by clients.
+These sessions can be retrieved in RPCs by their session ID, and contain informations about the
+clients, including their UID. The sessions also have a `last_used` value storing a timestamp
+of their last use, ready to be used to implement session expiration.
+
+Some improvements to this example remain possible. In practice, the MAC could be computed
+based on more than just the session ID for a given RPC. Including some arguments of the
+RPC can be a way to ensure that content of the RPC is not tempered with in a man-in-the-middle
+attack for example.
