@@ -109,6 +109,10 @@ matches, and uses the client's key to compute the same hash of the pair `(uid, s
 the hash matches what the client sent, it must be that the client had the correct key, and
 the server can trust that it is who it claims to be.
 
+Note that the comparison between the hash sent by the client and the expected hash is done
+using `CRYPTO_memcmp` rather than `memcmp`. This is to avoid leaking timing information that
+could let someone guess the HMAC through a timing attack.
+
 It is easy to see that this example is limited to one client process per user. If multiple
 processes with the same `uid` were to try to interact with a server, they should not only share
 the same key (dangerous), but they should also coordinate to send RPCs with correct sequence

@@ -6,6 +6,7 @@
 #include <mercury_proc_string.h>
 #include <stdlib.h>
 #include <openssl/hmac.h>
+#include <openssl/crypto.h>
 
 typedef struct {
     uint64_t uid;                        // uid_t cast into a larger int
@@ -33,7 +34,7 @@ static inline void create_token(token_t* token, uid_t uid, uint64_t seq_no, cons
 static inline int check_token(token_t* token, uid_t uid, uint64_t seq_no, const char* key, size_t key_len) {
     token_t expected = {0};
     create_token(&expected, uid, seq_no, key, key_len);
-    return memcmp(&expected, token, sizeof(expected)) == 0 ? 0 : -1;
+    return CRYPTO_memcmp(&expected, token, sizeof(expected)) == 0 ? 0 : -1;
 }
 
 MERCURY_GEN_PROC(auth_in_t, ((hg_string_t)(credential)))

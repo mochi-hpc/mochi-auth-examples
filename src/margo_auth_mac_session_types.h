@@ -6,13 +6,14 @@
 #include <mercury_proc_string.h>
 #include <stdlib.h>
 #include <openssl/hmac.h>
+#include <openssl/crypto.h>
 
 typedef uint64_t session_id_t;
 #define hg_proc_session_id_t hg_proc_uint64_t
 
 typedef struct {
-    uint64_t session_id;                 // uid_t cast into a larger int
-    uint64_t seq_no;                     // sequence number
+    session_id_t  session_id;            // session ID
+    uint64_t      seq_no;                // sequence number
     unsigned char hmac[EVP_MAX_MD_SIZE]; // HMAC of the above two fields
 } token_t;
 
@@ -45,7 +46,7 @@ static inline int check_token(token_t* token,
 {
     token_t expected = {0};
     create_token(&expected, session_id, seq_no, key, key_len);
-    return memcmp(&expected, token, sizeof(expected)) == 0 ? 0 : -1;
+    return CRYPTO_memcmp(&expected, token, sizeof(expected)) == 0 ? 0 : -1;
 }
 
 MERCURY_GEN_PROC(auth_in_t, ((hg_string_t)(credential)))

@@ -11,6 +11,7 @@ typedef struct {
     margo_instance_id mid;
     hg_id_t           auth_id;
     hg_id_t           hello_id;
+    hg_id_t           close_id;
 } client_t;
 
 typedef struct {
@@ -23,6 +24,7 @@ typedef struct {
 
 static int client_authenticate(const client_t* client, const char* address, connection_t* connection);
 static int client_hello(connection_t* connection, const char* name);
+static int client_close_session(connection_t* connection);
 
 int main(int argc, char** argv)
 {
@@ -48,6 +50,7 @@ int main(int argc, char** argv)
     // register RPCs
     client.auth_id  = MARGO_REGISTER(client.mid, "authenticate", auth_in_t, auth_out_t, NULL);
     client.hello_id = MARGO_REGISTER(client.mid, "hello", hello_in_t, hello_out_t, NULL);
+    client.close_id = MARGO_REGISTER(client.mid, "close", close_in_t, close_out_t, NULL);
 
     // authenticate, initializing a connection_t instance
     ret = client_authenticate(&client, server, &connection);
@@ -62,6 +65,9 @@ int main(int argc, char** argv)
 
     ret = client_hello(&connection, "Rob");
     ASSERT(ret == 0, "client_hello(\"Rob\") failed\n");
+
+    ret = client_close_session(&connection);
+    ASSERT(ret == 0, "client_close_session failed\n");
 
 finish:
     // cleanup
@@ -183,6 +189,54 @@ int client_hello(connection_t* connection, const char* name)
 
     // increment the sequence number
     if(ret == 0) connection->seq_no++;
+
+finish:
+    // cleanup
+    margo_free_output(handle, &out);
+    margo_destroy(handle);
+    return ret;
+}
+
+int client_close_session(connection_t* connection)
+{
+    int         ret    = 0;
+    hg_handle_t handle = HG_HANDLE_NULL;
+    hg_return_t hret   = HG_SUCCESS;
+    close_in_t   in    = {0};
+    close_out_t  out   = {0};
+
+    // create the token for the RPC
+    create_token(&in.token,
+                 connection->session_id,
+                 connection->seq_no,
+                 (const char*)connection->key,
+                 sizeof(connection->key));
+
+    // create the RPC handle
+    hret = margo_create(connection->client->mid,
+                        connection->server_addr,
+                        connection->client->close_id,
+                        &handle);
+    ASSERT(hret == HG_SUCCESS,
+            "margo_create failed with error: %s\n",
+            HG_Error_to_string(hret));
+
+    // send the RPC
+    hret = margo_forward(handle, &in);
+    ASSERT(hret == HG_SUCCESS,
+           "margo_forward failed with error: %s\n",
+           HG_Error_to_string(hret));
+
+    // get the output of the RPC
+    hret = margo_get_output(handle, &out);
+    ASSERT(hret == HG_SUCCESS,
+           "margo_get_output failed with error: %s\n",
+           HG_Error_to_string(hret));
+
+    ret = out.ret;
+
+    margo_addr_free(connection->client->mid, connection->server_addr);
+    memset(connection, 0, sizeof(*connection));
 
 finish:
     // cleanup

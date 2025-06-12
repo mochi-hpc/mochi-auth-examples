@@ -31,6 +31,9 @@ DECLARE_MARGO_RPC_HANDLER(authenticate)
 static void hello(hg_handle_t handle);
 DECLARE_MARGO_RPC_HANDLER(hello)
 
+static void close_session(hg_handle_t handle);
+DECLARE_MARGO_RPC_HANDLER(close_session)
+
 int main(int argc, char** argv)
 {
     int ret = 0;
@@ -72,6 +75,8 @@ int main(int argc, char** argv)
     id = MARGO_REGISTER(server.mid, "authenticate", auth_in_t, auth_out_t, authenticate);
     margo_register_data(server.mid, id, &server, NULL);
     id = MARGO_REGISTER(server.mid, "hello", hello_in_t, hello_out_t, hello);
+    margo_register_data(server.mid, id, &server, NULL);
+    id = MARGO_REGISTER(server.mid, "close", close_in_t, close_out_t, close_session);
     margo_register_data(server.mid, id, &server, NULL);
 
     printf("Server running at address %s\n", server.self_addr);
@@ -125,7 +130,7 @@ void authenticate(hg_handle_t handle)
     memcpy(session->key, payload, sizeof(session->key));
 
     // check that this server is the intended destination
-    ASSERT(strncmp(server->self_addr, payload + sizeof(session->key), payload_len) == 0,
+    ASSERT(strncmp(server->self_addr, payload + sizeof(session->key), payload_len - sizeof(session->key)) == 0,
            "Replay attempt, not intended destination for this RPC!\n");
 
     // create a session ID for this new connection
@@ -208,4 +213,61 @@ finish:
     margo_destroy(handle);
 }
 DEFINE_MARGO_RPC_HANDLER(hello)
+
+void close_session(hg_handle_t handle)
+{
+    close_in_t   in      = {0};
+    close_out_t  out     = {0};
+    hg_return_t  hret    = HG_SUCCESS;
+    int          ret     = 0;
+    session_t*   session = NULL;
+
+    margo_instance_id     mid  = margo_hg_handle_get_instance(handle);
+    const struct hg_info* info = margo_get_info(handle);
+    server_t* server           = margo_registered_data(mid, info->id);
+
+    // get the input of the RPC
+    hret = margo_get_input(handle, &in);
+    ASSERT(hret == HG_SUCCESS, "Could not deserialize input arguments\n");
+
+    // find the corresponding session
+    ABT_mutex_lock(ABT_MUTEX_MEMORY_GET_HANDLE(&server->sessions_mtx));
+    HASH_FIND(hh, server->sessions, &in.token.session_id, sizeof(in.token.session_id), session);
+    if(!session) {
+        fprintf(stderr, "Could not find session\n");
+        ret = -1;
+        goto unlock;
+    }
+
+    // check validity of the session
+    if(in.token.seq_no != session->seq_no) {
+        fprintf(stderr, "Unexpected sequence number for session\n");
+        ret = -1;
+        goto unlock;
+    }
+
+    // check the token sent by the client against the session
+    ret = check_token(&in.token, in.token.session_id, in.token.seq_no,
+                      (const char*)session->key, sizeof(session->key));
+    if(ret != 0) {
+        fprintf(stderr, "Unauthorized attempt to call the close RPC\n");
+        goto unlock;
+    }
+
+    // remove the session from the hash
+    HASH_DELETE(hh, server->sessions, session);
+    free(session);
+    printf("Successfully removed session\n");
+
+unlock:
+    ABT_mutex_unlock(ABT_MUTEX_MEMORY_GET_HANDLE(&server->sessions_mtx));
+
+finish:
+    // cleanup
+    out.ret = ret;
+    margo_respond(handle, &out);
+    margo_free_input(handle, &in);
+    margo_destroy(handle);
+}
+DEFINE_MARGO_RPC_HANDLER(close_session)
 
